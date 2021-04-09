@@ -28,6 +28,8 @@ type Options struct {
 var DefaultOptions Options
 
 type NetworkPolicy struct {
+	Options         *Options
+	hasFilters      bool
 	DenyRanger      cidranger.Ranger
 	AllowRanger     cidranger.Ranger
 	AllowRules      map[string]*regexp.Regexp
@@ -88,10 +90,15 @@ func New(options Options) (*NetworkPolicy, error) {
 		}
 	}
 
-	return &NetworkPolicy{DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList, DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules}, nil
+	hasFilters := len(options.DenyList)+len(options.AllowList)+len(options.AllowSchemeList)+len(options.DenySchemeList) > 0
+
+	return &NetworkPolicy{Options: &options, DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList, DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules, hasFilters: hasFilters}, nil
 }
 
 func (r NetworkPolicy) Validate(host string) bool {
+	if !r.hasFilters {
+		return true
+	}
 	// check if it's an ip
 	IP := net.ParseIP(host)
 	if IP != nil {
@@ -144,6 +151,9 @@ func (r NetworkPolicy) Validate(host string) bool {
 }
 
 func (r NetworkPolicy) ValidateURLWithIP(host string, ip string) bool {
+	if !r.hasFilters {
+		return true
+	}
 	return r.Validate(host) && r.ValidateAddress(ip)
 }
 

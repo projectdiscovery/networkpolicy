@@ -55,39 +55,40 @@ func New(options Options) (*NetworkPolicy, error) {
 
 	allowRanger := cidranger.NewPCTrieRanger()
 	for _, r := range options.AllowList {
-		// check if it's a regex
-		if rgx, err := regexp.Compile(r); err == nil {
-			allowRules[r] = rgx
+		// handle if ip/cidr
+		cidr, err := asCidr(r)
+		if err == nil {
+			if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+				return nil, err
+			}
 			continue
 		}
 
-		// handle it as a cidr
-		cidr, err := asCidr(r)
+		// handle as regex
+		rgx, err := regexp.Compile(r)
 		if err != nil {
 			return nil, err
 		}
-
-		if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
-			return nil, err
-		}
+		allowRules[r] = rgx
 	}
 
 	denyRanger := cidranger.NewPCTrieRanger()
 	for _, r := range options.DenyList {
-		// check if it's a regex
-		if rgx, err := regexp.Compile(r); err == nil {
-			denyRules[r] = rgx
+		// handle if ip/cidr
+		cidr, err := asCidr(r)
+		if err == nil {
+			if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+				return nil, err
+			}
 			continue
 		}
 
-		cidr, err := asCidr(r)
+		// handle as regex
+		rgx, err := regexp.Compile(r)
 		if err != nil {
 			return nil, err
 		}
-
-		if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
-			return nil, err
-		}
+		denyRules[r] = rgx
 	}
 
 	hasFilters := len(options.DenyList)+len(options.AllowList)+len(options.AllowSchemeList)+len(options.DenySchemeList) > 0

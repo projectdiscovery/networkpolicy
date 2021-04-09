@@ -1,4 +1,4 @@
-package ranger
+package networkpolicy
 
 import (
 	"net"
@@ -27,7 +27,7 @@ type Options struct {
 // DefaultOptions is the base configuration for the validator
 var DefaultOptions Options
 
-type Ranger struct {
+type NetworkPolicy struct {
 	DenyRanger      cidranger.Ranger
 	AllowRanger     cidranger.Ranger
 	AllowRules      map[string]*regexp.Regexp
@@ -37,7 +37,7 @@ type Ranger struct {
 }
 
 // New creates a new URL validator using the validator options
-func New(options Options) (*Ranger, error) {
+func New(options Options) (*NetworkPolicy, error) {
 	allowSchemeList := make(map[string]struct{})
 	for _, scheme := range options.AllowSchemeList {
 		allowSchemeList[scheme] = struct{}{}
@@ -88,10 +88,10 @@ func New(options Options) (*Ranger, error) {
 		}
 	}
 
-	return &Ranger{DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList, DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules}, nil
+	return &NetworkPolicy{DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList, DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules}, nil
 }
 
-func (r Ranger) Validate(host string) bool {
+func (r NetworkPolicy) Validate(host string) bool {
 	// check if it's an ip
 	IP := net.ParseIP(host)
 	if IP != nil {
@@ -143,11 +143,11 @@ func (r Ranger) Validate(host string) bool {
 	return !isSchemeInDenyList && !isInDenyList && isInAllowedList && isSchemeInAllowedList
 }
 
-func (r Ranger) ValidateURLWithIP(host string, ip string) bool {
+func (r NetworkPolicy) ValidateURLWithIP(host string, ip string) bool {
 	return r.Validate(host) && r.ValidateAddress(ip)
 }
 
-func (r Ranger) ValidateAddress(IP string) bool {
+func (r NetworkPolicy) ValidateAddress(IP string) bool {
 	IPDest := net.ParseIP(IP)
 	if IPDest == nil {
 		return false

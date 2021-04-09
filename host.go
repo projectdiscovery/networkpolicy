@@ -1,4 +1,4 @@
-package ranger
+package networkpolicy
 
 var DefaultHostDenylist = []string{
 	"localhost", // Localhost

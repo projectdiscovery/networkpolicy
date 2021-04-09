@@ -1,4 +1,4 @@
-package ranger
+package networkpolicy
 
 var DefaultIPv4DenylistRanges = []string{
 	"0.0.0.0/8",       // Current network (only valid as source address)

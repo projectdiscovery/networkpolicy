@@ -1,6 +1,6 @@
 package networkpolicy
 
-var DefaultSchemeWhitelist = []string{
+var DefaultSchemeAllowList = []string{
 	"http",
 	"https",
 }

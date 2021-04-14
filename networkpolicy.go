@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"regexp"
+	"strconv"
 
 	"github.com/projectdiscovery/chaos-middleware/iputil"
 	"github.com/yl2chen/cidranger"
@@ -14,7 +15,7 @@ func init() {
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv4DenylistRanges...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
-	DefaultOptions.AllowSchemeList = append(DefaultOptions.DenyList, DefaultSchemeWhitelist...)
+	DefaultOptions.AllowSchemeList = append(DefaultOptions.DenyList, DefaultSchemeAllowList...)
 }
 
 type Options struct {
@@ -22,6 +23,8 @@ type Options struct {
 	AllowList       []string
 	AllowSchemeList []string
 	DenySchemeList  []string
+	AllowPortList   []int
+	DenyPortList    []int
 }
 
 // DefaultOptions is the base configuration for the validator
@@ -36,6 +39,8 @@ type NetworkPolicy struct {
 	DenyRules       map[string]*regexp.Regexp
 	AllowSchemeList map[string]struct{}
 	DenySchemeList  map[string]struct{}
+	AllowPortList   map[int]struct{}
+	DenyPortList    map[int]struct{}
 }
 
 // New creates a new URL validator using the validator options
@@ -91,9 +96,20 @@ func New(options Options) (*NetworkPolicy, error) {
 		denyRules[r] = rgx
 	}
 
-	hasFilters := len(options.DenyList)+len(options.AllowList)+len(options.AllowSchemeList)+len(options.DenySchemeList) > 0
+	allowPortList := make(map[int]struct{})
+	for _, p := range options.AllowPortList {
+		allowPortList[p] = struct{}{}
+	}
 
-	return &NetworkPolicy{Options: &options, DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList, DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules, hasFilters: hasFilters}, nil
+	denyPortList := make(map[int]struct{})
+	for _, p := range options.DenyPortList {
+		denyPortList[p] = struct{}{}
+	}
+
+	hasFilters := len(options.DenyList)+len(options.AllowList)+len(options.AllowSchemeList)+len(options.DenySchemeList)+len(options.AllowPortList)+len(options.DenyPortList) > 0
+
+	return &NetworkPolicy{Options: &options, DenyRanger: denyRanger, AllowRanger: allowRanger, AllowSchemeList: allowSchemeList,
+		DenySchemeList: denySchemeList, AllowRules: allowRules, DenyRules: denyRules, AllowPortList: allowPortList, DenyPortList: denyPortList, hasFilters: hasFilters}, nil
 }
 
 func (r NetworkPolicy) Validate(host string) bool {
@@ -112,19 +128,44 @@ func (r NetworkPolicy) Validate(host string) bool {
 		}
 	}
 
+	// try to obtain scheme and port
+	var hasPort bool
+	var port int
+	var hasScheme bool
+	var scheme string
+
 	// check if it's a valid URL
-	URL, err := url.Parse(host)
-	if err != nil {
-		return false
+	if URL, err := url.Parse(host); err == nil {
+		// parse scheme
+		scheme := URL.Scheme
+		hasScheme = scheme != ""
+		// parse port
+		port, err = strconv.Atoi(URL.Port())
+		if err == nil {
+			hasPort = true
+		}
+	}
+
+	// check the port
+	var isPortInDenyList, isPortInAllowedList bool
+
+	if r.DenyPortList != nil && hasPort {
+		_, isPortInDenyList = r.DenyPortList[port]
+	}
+
+	if r.AllowPortList != nil && hasPort {
+		_, isPortInAllowedList = r.DenyPortList[port]
+	} else {
+		isPortInAllowedList = true
 	}
 
 	var isSchemeInDenyList, isSchemeInAllowedList bool
-	if r.DenySchemeList != nil {
-		_, isSchemeInDenyList = r.DenySchemeList[URL.Scheme]
+	if r.DenySchemeList != nil && hasScheme {
+		_, isSchemeInDenyList = r.DenySchemeList[scheme]
 	}
 
-	if r.AllowSchemeList != nil {
-		_, isSchemeInAllowedList = r.AllowSchemeList[URL.Scheme]
+	if r.AllowSchemeList != nil && hasScheme {
+		_, isSchemeInAllowedList = r.AllowSchemeList[scheme]
 	} else {
 		isSchemeInAllowedList = true
 	}
@@ -148,7 +189,7 @@ func (r NetworkPolicy) Validate(host string) bool {
 		isInAllowedList = true
 	}
 
-	return !isSchemeInDenyList && !isInDenyList && isInAllowedList && isSchemeInAllowedList
+	return !isSchemeInDenyList && !isInDenyList && isInAllowedList && isSchemeInAllowedList && !isPortInDenyList && isPortInAllowedList
 }
 
 func (r NetworkPolicy) ValidateURLWithIP(host string, ip string) bool {
@@ -174,6 +215,22 @@ func (r NetworkPolicy) ValidateAddress(IP string) bool {
 	return true
 }
 
+func (r NetworkPolicy) ValidateAddressWithPort(IP string, port int) bool {
+	return r.ValidateAddress(IP) && r.ValidatePort(port)
+}
+
+func (r NetworkPolicy) ValidatePort(port int) bool {
+	if r.DenyPortList != nil && portIsListed(r.DenyPortList, port) {
+		return false
+	}
+
+	if r.AllowPortList != nil {
+		return portIsListed(r.AllowPortList, port)
+	}
+
+	return true
+}
+
 func asCidr(s string) (*net.IPNet, error) {
 	if iputil.IsIP(s) {
 		s += "/32"
@@ -189,4 +246,9 @@ func asCidr(s string) (*net.IPNet, error) {
 func rangerContains(ranger cidranger.Ranger, IP net.IP) bool {
 	ok, err := ranger.Contains(IP)
 	return ok && err == nil
+}
+
+func portIsListed(list map[int]struct{}, port int) bool {
+	_, ok := list[port]
+	return ok
 }

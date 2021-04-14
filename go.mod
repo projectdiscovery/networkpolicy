@@ -1,6 +1,6 @@
 module github.com/projectdiscovery/networkpolicy
 
-go 1.16
+go 1.14
 
 require (
 	github.com/projectdiscovery/iputil v0.0.0-20210414194613-4b4d2517acf0

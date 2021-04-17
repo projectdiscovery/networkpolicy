@@ -252,3 +252,25 @@ func portIsListed(list map[int]struct{}, port int) bool {
 	_, ok := list[port]
 	return ok
 }
+
+// ValidateHost checks all the ips associated to a hostname and returns the valid ip if any
+func (r NetworkPolicy) ValidateHost(host string) (string, bool) {
+	if iputil.IsIP(host) {
+		return host, r.Validate(host)
+	}
+	// obtain ips from system resolvers
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		// no addresses
+		return "", false
+	}
+
+	for _, addr := range addrs {
+		// if at least one address
+		if r.Validate(addr) {
+			return addr, true
+		}
+	}
+
+	return "", false
+}

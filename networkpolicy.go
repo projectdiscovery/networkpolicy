@@ -123,7 +123,7 @@ func (r NetworkPolicy) Validate(host string) bool {
 			return false
 		}
 
-		if r.AllowRanger != nil {
+		if r.AllowRanger != nil && r.AllowRanger.Len() > 0 {
 			return rangerContains(r.AllowRanger, IP)
 		}
 	}
@@ -208,7 +208,7 @@ func (r NetworkPolicy) ValidateAddress(IP string) bool {
 		return false
 	}
 
-	if r.AllowRanger != nil {
+	if r.AllowRanger != nil && r.AllowRanger.Len() > 0 {
 		return rangerContains(r.AllowRanger, IPDest)
 	}
 

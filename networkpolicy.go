@@ -116,10 +116,11 @@ func (r NetworkPolicy) Validate(host string) bool {
 	if !r.hasFilters {
 		return true
 	}
+
 	// check if it's an ip
-	IP := net.ParseIP(host)
-	if IP != nil {
-		if r.DenyRanger != nil && rangerContains(r.DenyRanger, IP) {
+	if iputil.IsIP(host) {
+		IP := net.ParseIP(host)
+		if r.DenyRanger != nil && r.DenyRanger.Len() > 0 && rangerContains(r.DenyRanger, IP) {
 			return false
 		}
 
@@ -204,7 +205,7 @@ func (r NetworkPolicy) ValidateAddress(IP string) bool {
 	if IPDest == nil {
 		return false
 	}
-	if r.DenyRanger != nil && rangerContains(r.DenyRanger, IPDest) {
+	if r.DenyRanger != nil && r.DenyRanger.Len() > 0 && rangerContains(r.DenyRanger, IPDest) {
 		return false
 	}
 

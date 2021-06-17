@@ -58,42 +58,48 @@ func New(options Options) (*NetworkPolicy, error) {
 	allowRules := make(map[string]*regexp.Regexp)
 	denyRules := make(map[string]*regexp.Regexp)
 
-	allowRanger := cidranger.NewPCTrieRanger()
-	for _, r := range options.AllowList {
-		// handle if ip/cidr
-		cidr, err := asCidr(r)
-		if err == nil {
-			if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+	var allowRanger cidranger.Ranger
+	if len(options.AllowList) > 0 {
+		allowRanger = cidranger.NewPCTrieRanger()
+		for _, r := range options.AllowList {
+			// handle if ip/cidr
+			cidr, err := asCidr(r)
+			if err == nil {
+				if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+					return nil, err
+				}
+				continue
+			}
+
+			// handle as regex
+			rgx, err := regexp.Compile(r)
+			if err != nil {
 				return nil, err
 			}
-			continue
+			allowRules[r] = rgx
 		}
-
-		// handle as regex
-		rgx, err := regexp.Compile(r)
-		if err != nil {
-			return nil, err
-		}
-		allowRules[r] = rgx
 	}
 
-	denyRanger := cidranger.NewPCTrieRanger()
-	for _, r := range options.DenyList {
-		// handle if ip/cidr
-		cidr, err := asCidr(r)
-		if err == nil {
-			if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+	var denyRanger cidranger.Ranger
+	if len(options.DenyList) > 0 {
+		denyRanger = cidranger.NewPCTrieRanger()
+		for _, r := range options.DenyList {
+			// handle if ip/cidr
+			cidr, err := asCidr(r)
+			if err == nil {
+				if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+					return nil, err
+				}
+				continue
+			}
+
+			// handle as regex
+			rgx, err := regexp.Compile(r)
+			if err != nil {
 				return nil, err
 			}
-			continue
+			denyRules[r] = rgx
 		}
-
-		// handle as regex
-		rgx, err := regexp.Compile(r)
-		if err != nil {
-			return nil, err
-		}
-		denyRules[r] = rgx
 	}
 
 	allowPortList := make(map[int]struct{})

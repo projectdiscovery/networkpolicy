@@ -127,6 +127,8 @@ func (r NetworkPolicy) Validate(host string) bool {
 		if r.AllowRanger != nil && r.AllowRanger.Len() > 0 {
 			return rangerContains(r.AllowRanger, IP)
 		}
+
+		return true
 	}
 
 	// try to obtain scheme and port

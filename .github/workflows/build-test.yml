@@ -1,6 +1,5 @@
 name: 🔨 Build Test
 on:
-  push:
   pull_request:
   workflow_dispatch:
 
@@ -21,6 +20,6 @@ jobs:
       - name: Test
         run: go test ./...
 
-      # Todo: create example folder
-      # - name: Build
-      #   run: go build .
+      - name: Build
+        run: go run main.go
+        working-directory: examples/

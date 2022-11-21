@@ -22,4 +22,5 @@ jobs:
         run: go test ./...
 
       - name: Build
-        run: go build examples/main.go
+        run: go run main.go
+        working-directory: examples/

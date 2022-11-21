@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"errors"
 	"log"
 	"net/http"
@@ -29,8 +30,13 @@ func main() {
 
 	client := &http.Client{
 		CheckRedirect: customRedirectHandler,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
 	}
-	req, err := http.NewRequest(http.MethodGet, "https://projectdiscovery.io", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://scanme.sh", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

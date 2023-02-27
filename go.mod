@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/projectdiscovery/iputil v0.0.0-20210414194613-4b4d2517acf0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	github.com/yl2chen/cidranger v1.0.2
 )
 

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/projectdiscovery/utils v0.0.25
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/yl2chen/cidranger v1.0.2
 )
 

@@ -19,3 +19,14 @@ func TestValidateAddress(t *testing.T) {
 	ok = np.ValidateAddress("192.168.1.1")
 	require.Equal(t, true, ok, "Unexpected negative result")
 }
+
+func TestValidateASN(t *testing.T) {
+	var npOptions Options
+	npOptions.DenyList = append(npOptions.DenyList, "AS15169") // ASN for Google LLC
+	np, err := New(npOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ok := np.ValidateAddress("8.8.8.8") // IP address owned by Google LLC
+	require.Equal(t, false, ok, "Unexpected positive result for ASN")
+}

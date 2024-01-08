@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/projectdiscovery/mapcidr/asn"
 	iputil "github.com/projectdiscovery/utils/ip"
 	"github.com/yl2chen/cidranger"
 )
@@ -71,6 +72,16 @@ func New(options Options) (*NetworkPolicy, error) {
 				continue
 			}
 
+			if asn.IsASN(r) {
+				cidrs := expandASNasCIDR(r)
+				for _, cidr := range cidrs {
+					if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+						return nil, err
+					}
+				}
+				continue
+			}
+
 			// handle as regex
 			rgx, err := regexp.Compile(r)
 			if err != nil {
@@ -89,6 +100,16 @@ func New(options Options) (*NetworkPolicy, error) {
 			if err == nil {
 				if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
 					return nil, err
+				}
+				continue
+			}
+
+			if asn.IsASN(r) {
+				cidrs := expandASNasCIDR(r)
+				for _, cidr := range cidrs {
+					if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
+						return nil, err
+					}
 				}
 				continue
 			}
@@ -250,6 +271,11 @@ func asCidr(s string) (*net.IPNet, error) {
 	}
 
 	return cidr, nil
+}
+
+func expandASNasCIDR(value string) []*net.IPNet {
+	cidrs, _ := asn.GetCIDRsForASNNum(value)
+	return cidrs
 }
 
 func rangerContains(ranger cidranger.Ranger, IP net.IP) bool {

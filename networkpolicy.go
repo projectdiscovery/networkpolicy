@@ -2,11 +2,11 @@ package networkpolicy
 
 import (
 	"net"
-	"net/url"
 	"regexp"
 	"strconv"
 
 	iputil "github.com/projectdiscovery/utils/ip"
+	urlutil "github.com/projectdiscovery/utils/url"
 	"github.com/yl2chen/cidranger"
 )
 
@@ -144,7 +144,7 @@ func (r NetworkPolicy) Validate(host string) bool {
 	var scheme string
 
 	// check if it's a valid URL
-	if URL, err := url.Parse(host); err == nil {
+	if URL, err := urlutil.Parse(host); err == nil {
 		// parse scheme
 		scheme := URL.Scheme
 		hasScheme = scheme != ""
@@ -158,22 +158,22 @@ func (r NetworkPolicy) Validate(host string) bool {
 	// check the port
 	var isPortInDenyList, isPortInAllowedList bool
 
-	if r.DenyPortList != nil && hasPort {
+	if len(r.DenyPortList) > 0 && hasPort {
 		_, isPortInDenyList = r.DenyPortList[port]
 	}
 
-	if r.AllowPortList != nil && hasPort {
-		_, isPortInAllowedList = r.DenyPortList[port]
+	if len(r.AllowPortList) > 0 && hasPort {
+		_, isPortInAllowedList = r.AllowPortList[port]
 	} else {
 		isPortInAllowedList = true
 	}
 
 	var isSchemeInDenyList, isSchemeInAllowedList bool
-	if r.DenySchemeList != nil && hasScheme {
+	if len(r.DenySchemeList) > 0 && hasScheme {
 		_, isSchemeInDenyList = r.DenySchemeList[scheme]
 	}
 
-	if r.AllowSchemeList != nil && hasScheme {
+	if len(r.AllowSchemeList) > 0 && hasScheme {
 		_, isSchemeInAllowedList = r.AllowSchemeList[scheme]
 	} else {
 		isSchemeInAllowedList = true

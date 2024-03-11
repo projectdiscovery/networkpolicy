@@ -3,7 +3,7 @@ module github.com/projectdiscovery/networkpolicy
 go 1.21
 
 require (
-	github.com/projectdiscovery/utils v0.0.82
+	github.com/projectdiscovery/utils v0.0.83
 	github.com/stretchr/testify v1.9.0
 	github.com/yl2chen/cidranger v1.0.2
 )

@@ -2,12 +2,13 @@ package networkpolicy
 
 import (
 	"net"
+	"net/netip"
 	"regexp"
 	"strconv"
 
+	"github.com/gaissmai/bart"
 	iputil "github.com/projectdiscovery/utils/ip"
 	urlutil "github.com/projectdiscovery/utils/url"
-	"github.com/yl2chen/cidranger"
 )
 
 func init() {
@@ -31,10 +32,12 @@ type Options struct {
 var DefaultOptions Options
 
 type NetworkPolicy struct {
-	Options         *Options
-	hasFilters      bool
-	DenyRanger      cidranger.Ranger
-	AllowRanger     cidranger.Ranger
+	Options    *Options
+	hasFilters bool
+
+	DenyRanger  *bart.Table[net.IP]
+	AllowRanger *bart.Table[net.IP]
+
 	AllowRules      map[string]*regexp.Regexp
 	DenyRules       map[string]*regexp.Regexp
 	AllowSchemeList map[string]struct{}
@@ -58,16 +61,15 @@ func New(options Options) (*NetworkPolicy, error) {
 	allowRules := make(map[string]*regexp.Regexp)
 	denyRules := make(map[string]*regexp.Regexp)
 
-	var allowRanger cidranger.Ranger
+	var allowRanger *bart.Table[net.IP]
 	if len(options.AllowList) > 0 {
-		allowRanger = cidranger.NewPCTrieRanger()
+		allowRanger = new(bart.Table[net.IP])
+
 		for _, r := range options.AllowList {
 			// handle if ip/cidr
 			cidr, err := asCidr(r)
 			if err == nil {
-				if err := allowRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
-					return nil, err
-				}
+				allowRanger.Insert(cidr, nil)
 				continue
 			}
 
@@ -80,16 +82,15 @@ func New(options Options) (*NetworkPolicy, error) {
 		}
 	}
 
-	var denyRanger cidranger.Ranger
+	var denyRanger *bart.Table[net.IP]
 	if len(options.DenyList) > 0 {
-		denyRanger = cidranger.NewPCTrieRanger()
+		denyRanger = new(bart.Table[net.IP])
+
 		for _, r := range options.DenyList {
 			// handle if ip/cidr
 			cidr, err := asCidr(r)
 			if err == nil {
-				if err := denyRanger.Insert(cidranger.NewBasicRangerEntry(*cidr)); err != nil {
-					return nil, err
-				}
+				denyRanger.Insert(cidr, nil)
 				continue
 			}
 
@@ -125,13 +126,17 @@ func (r NetworkPolicy) Validate(host string) bool {
 
 	// check if it's an ip
 	if iputil.IsIP(host) {
-		IP := net.ParseIP(host)
-		if r.DenyRanger != nil && r.DenyRanger.Len() > 0 && rangerContains(r.DenyRanger, IP) {
+		parsed, err := netip.ParseAddr(host)
+		if err != nil {
 			return false
 		}
 
-		if r.AllowRanger != nil && r.AllowRanger.Len() > 0 {
-			return rangerContains(r.AllowRanger, IP)
+		if r.DenyRanger != nil && r.DenyRanger.Size() > 0 && rangerContains(r.DenyRanger, parsed) {
+			return false
+		}
+
+		if r.AllowRanger != nil && r.AllowRanger.Size() > 0 {
+			return rangerContains(r.AllowRanger, parsed)
 		}
 
 		return true
@@ -209,15 +214,15 @@ func (r NetworkPolicy) ValidateURLWithIP(host string, ip string) bool {
 }
 
 func (r NetworkPolicy) ValidateAddress(IP string) bool {
-	IPDest := net.ParseIP(IP)
-	if IPDest == nil {
+	IPDest, err := netip.ParseAddr(IP)
+	if err != nil {
 		return false
 	}
-	if r.DenyRanger != nil && r.DenyRanger.Len() > 0 && rangerContains(r.DenyRanger, IPDest) {
+	if r.DenyRanger != nil && r.DenyRanger.Size() > 0 && rangerContains(r.DenyRanger, IPDest) {
 		return false
 	}
 
-	if r.AllowRanger != nil && r.AllowRanger.Len() > 0 {
+	if r.AllowRanger != nil && r.AllowRanger.Size() > 0 {
 		return rangerContains(r.AllowRanger, IPDest)
 	}
 
@@ -240,21 +245,20 @@ func (r NetworkPolicy) ValidatePort(port int) bool {
 	return true
 }
 
-func asCidr(s string) (*net.IPNet, error) {
+func asCidr(s string) (netip.Prefix, error) {
 	if iputil.IsIP(s) {
 		s += "/32"
 	}
-	_, cidr, err := net.ParseCIDR(s)
+	cidr, err := netip.ParsePrefix(s)
 	if err != nil {
-		return nil, err
+		return cidr, err
 	}
-
 	return cidr, nil
 }
 
-func rangerContains(ranger cidranger.Ranger, IP net.IP) bool {
-	ok, err := ranger.Contains(IP)
-	return ok && err == nil
+func rangerContains(ranger *bart.Table[net.IP], IP netip.Addr) bool {
+	_, ok := ranger.Lookup(IP)
+	return ok
 }
 
 func portIsListed(list map[int]struct{}, port int) bool {

@@ -3,6 +3,7 @@ module github.com/projectdiscovery/networkpolicy
 go 1.21
 
 require (
+	github.com/gaissmai/bart v0.9.5
 	github.com/projectdiscovery/utils v0.0.82
 	github.com/stretchr/testify v1.9.0
 	github.com/yl2chen/cidranger v1.0.2
@@ -10,6 +11,7 @@ require (
 
 require (
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect

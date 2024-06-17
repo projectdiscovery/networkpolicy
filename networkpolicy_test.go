@@ -59,7 +59,7 @@ func Benchmark_Networkpolicy_CIDRRanger(b *testing.B) {
 		ranger := cidranger.NewPCTrieRanger()
 		for _, r := range DefaultIPv4DenylistRanges {
 			_, cidr, _ := net.ParseCIDR(r)
-			ranger.Insert(cidranger.NewBasicRangerEntry(*cidr))
+			_ = ranger.Insert(cidranger.NewBasicRangerEntry(*cidr))
 		}
 		contains, err := ranger.Contains(net.ParseIP("127.0.0.1"))
 		if err != nil || !contains {

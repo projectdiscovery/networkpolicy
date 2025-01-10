@@ -24,6 +24,24 @@ func TestValidateAddress(t *testing.T) {
 	require.Equal(t, true, ok, "Unexpected negative result")
 }
 
+func Test_ValidateV6Address(t *testing.T) {
+	np, err := New(DefaultOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ok := np.ValidateAddress("::1")
+	require.Equal(t, false, ok, "IPv6 localhost should be denied")
+
+	ok = np.ValidateAddress("2404:6800:4002:81c::200e")
+	require.Equal(t, true, ok, "Non-localhost IPv6 should be allowed")
+
+	t.Run("validate", func(t *testing.T) {
+		ok := np.Validate("::1")
+		require.Equal(t, false, ok, "IPv6 localhost should be denied")
+	})
+}
+
 func TestMultipleCases(t *testing.T) {
 	var testCases = []struct {
 		address       string

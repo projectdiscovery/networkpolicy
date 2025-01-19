@@ -16,7 +16,7 @@ func init() {
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6DenylistRanges...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
-	DefaultOptions.AllowSchemeList = append(DefaultOptions.DenyList, DefaultSchemeAllowList...)
+	DefaultOptions.AllowSchemeList = append(DefaultOptions.AllowSchemeList, DefaultSchemeAllowList...)
 }
 
 type Options struct {

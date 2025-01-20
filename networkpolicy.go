@@ -1,6 +1,7 @@
 package networkpolicy
 
 import (
+	"fmt"
 	"net"
 	"net/netip"
 	"regexp"
@@ -50,11 +51,17 @@ type NetworkPolicy struct {
 func New(options Options) (*NetworkPolicy, error) {
 	allowSchemeList := make(map[string]struct{})
 	for _, scheme := range options.AllowSchemeList {
+		if !schemePattern.MatchString(scheme) {
+			return nil, fmt.Errorf("invalid scheme format for allow list: %s", scheme)
+		}
 		allowSchemeList[scheme] = struct{}{}
 	}
 
 	denySchemeList := make(map[string]struct{})
 	for _, scheme := range options.DenySchemeList {
+		if !schemePattern.MatchString(scheme) {
+			return nil, fmt.Errorf("invalid scheme format for deny list: %s", scheme)
+		}
 		denySchemeList[scheme] = struct{}{}
 	}
 

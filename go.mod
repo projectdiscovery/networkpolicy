@@ -1,9 +1,10 @@
 module github.com/projectdiscovery/networkpolicy
 
 go 1.21
+toolchain go1.22.5
 
 require (
-	github.com/gaissmai/bart v0.9.5
+	github.com/gaissmai/bart v0.17.8
 	github.com/projectdiscovery/utils v0.4.7
 	github.com/stretchr/testify v1.10.0
 	github.com/yl2chen/cidranger v1.0.2
@@ -11,7 +12,6 @@ require (
 
 require (
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/bits-and-blooms/bitset v1.13.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/kr/text v0.2.0 // indirect

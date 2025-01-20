@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/netip"
+	"regexp"
 	"testing"
 
 	"github.com/gaissmai/bart"
@@ -97,6 +98,30 @@ func Benchmark_Networkpolicy_BartAlgorithm(b *testing.B) {
 		_, contains := rtbl.Lookup(netip.MustParseAddr("127.0.0.1"))
 		if !contains {
 			b.Fatalf("expected to contain")
+		}
+	}
+}
+
+func TestDefaultOptionsContent(t *testing.T) {
+	for _, scheme := range DefaultOptions.AllowSchemeList {
+		require.True(t, schemePattern.MatchString(scheme), "Scheme %s doesn't match expected pattern protocol://", scheme)
+	}
+
+	// Test deny list entries are either valid IPs, CIDRs, or compilable regexes
+	for _, entry := range DefaultOptions.DenyList {
+		// Try parsing as IP
+		if ip := net.ParseIP(entry); ip != nil {
+			continue
+		}
+
+		// Try parsing as CIDR
+		if _, _, err := net.ParseCIDR(entry); err == nil {
+			continue
+		}
+
+		// Try compiling as regex
+		if _, err := regexp.Compile(entry); err != nil {
+			t.Errorf("Entry in DenyList is neither a valid IP, CIDR, nor a valid regex: %s", entry)
 		}
 	}
 }

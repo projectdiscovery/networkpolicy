@@ -1,9 +1,8 @@
 module github.com/projectdiscovery/networkpolicy
 
 go 1.22.0
-
 require (
-	github.com/gaissmai/bart v0.17.10
+	github.com/gaissmai/bart v0.18.1
 	github.com/projectdiscovery/utils v0.4.13
 	github.com/stretchr/testify v1.10.0
 	github.com/yl2chen/cidranger v1.0.2

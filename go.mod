@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/gaissmai/bart v0.20.4
-	github.com/projectdiscovery/utils v0.4.19
+	github.com/projectdiscovery/utils v0.4.20
 	github.com/stretchr/testify v1.10.0
 	github.com/yl2chen/cidranger v1.0.2
 )

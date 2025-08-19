@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/gaissmai/bart v0.24.0
-	github.com/projectdiscovery/utils v0.4.22
+	github.com/projectdiscovery/utils v0.4.23
 	github.com/stretchr/testify v1.10.0
 	github.com/yl2chen/cidranger v1.0.2
 )
@@ -27,9 +27,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

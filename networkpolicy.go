@@ -254,7 +254,14 @@ func (r NetworkPolicy) ValidatePort(port int) bool {
 
 func asCidr(s string) (netip.Prefix, error) {
 	if iputil.IsIP(s) {
-		s += "/32"
+		addr, err := netip.ParseAddr(s)
+		if err == nil {
+			if addr.Is4() {
+				s += "/32"
+			} else {
+				s += "/128"
+			}
+		}
 	}
 	cidr, err := netip.ParsePrefix(s)
 	if err != nil {

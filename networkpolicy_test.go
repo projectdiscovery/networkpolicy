@@ -102,6 +102,70 @@ func Benchmark_Networkpolicy_BartAlgorithm(b *testing.B) {
 	}
 }
 
+func TestAsCidr(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+		wantErr  bool
+	}{
+		{
+			name:     "IPv4 address",
+			input:    "192.0.2.8",
+			expected: "192.0.2.8/32",
+			wantErr:  false,
+		},
+		{
+			name:     "IPv6 address",
+			input:    "3fff::",
+			expected: "3fff::/128",
+			wantErr:  false,
+		},
+		{
+			name:     "IPv6 full address",
+			input:    "3fff:1:beef:beef::beef",
+			expected: "3fff:1:beef:beef::beef/128",
+			wantErr:  false,
+		},
+		{
+			name:     "IPv4 CIDR unchanged",
+			input:    "192.0.2.0/24",
+			expected: "192.0.2.0/24",
+			wantErr:  false,
+		},
+		{
+			name:     "IPv6 CIDR unchanged",
+			input:    "3fff:1:beef:beef:beef:beef:beef:beef/96",
+			expected: "3fff:1:beef:beef:beef:beef:beef:beef/96",
+			wantErr:  false,
+		},
+		{
+			name:     "invalid input",
+			input:    "not-an-ip",
+			expected: "",
+			wantErr:  true,
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := asCidr(tt.input)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expected, result.String())
+			}
+		})
+	}
+}
+
 func TestDefaultOptionsContent(t *testing.T) {
 	for _, scheme := range DefaultOptions.AllowSchemeList {
 		require.True(t, schemePattern.MatchString(scheme), "Scheme %s doesn't match expected pattern protocol://", scheme)

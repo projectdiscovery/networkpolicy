@@ -7,18 +7,16 @@ toolchain go1.24.1
 require (
 	github.com/gaissmai/bart v0.29.0
 	github.com/projectdiscovery/utils v0.11.1
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.0
 	github.com/yl2chen/cidranger v1.0.2
 )
 
 require (
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/miekg/dns v1.1.62 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect

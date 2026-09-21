@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/gaissmai/bart v0.29.1
-	github.com/projectdiscovery/utils v0.11.3
+	github.com/projectdiscovery/utils v0.11.5
 	github.com/stretchr/testify v1.12.1
 	github.com/yl2chen/cidranger v1.0.2
 )

@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/gaissmai/bart v0.30.0
-	github.com/projectdiscovery/utils v0.11.6
+	github.com/projectdiscovery/utils v0.11.7
 	github.com/stretchr/testify v1.12.1
 	github.com/yl2chen/cidranger v1.0.2
 )

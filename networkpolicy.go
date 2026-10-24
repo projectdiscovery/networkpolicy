@@ -245,7 +245,7 @@ func (r NetworkPolicy) ValidatePort(port int) bool {
 		return false
 	}
 
-	if r.AllowPortList != nil {
+	if len(r.AllowPortList) > 0 {
 		return portIsListed(r.AllowPortList, port)
 	}
 

@@ -25,6 +25,30 @@ func TestValidateAddress(t *testing.T) {
 	require.Equal(t, true, ok, "Unexpected negative result")
 }
 
+func TestValidatePort(t *testing.T) {
+	testCases := []struct {
+		name     string
+		options  Options
+		port     int
+		expected bool
+	}{
+		{"no port lists", Options{DenyList: []string{"10.0.0.0/8"}}, 443, true},
+		{"allowed port", Options{AllowPortList: []int{443}}, 443, true},
+		{"not in allow list", Options{AllowPortList: []int{443}}, 80, false},
+		{"denied port", Options{DenyPortList: []int{22}}, 22, false},
+		{"not in deny list", Options{DenyPortList: []int{22}}, 443, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			np, err := New(tc.options)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, np.ValidatePort(tc.port))
+			require.Equal(t, tc.expected, np.ValidateAddressWithPort("192.168.1.1", tc.port))
+		})
+	}
+}
+
 func Test_ValidateV6Address(t *testing.T) {
 	np, err := New(DefaultOptions)
 	if err != nil {

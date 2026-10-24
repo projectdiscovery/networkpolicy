@@ -158,7 +158,7 @@ func (r NetworkPolicy) Validate(host string) bool {
 	// check if it's a valid URL
 	if URL, err := urlutil.Parse(host); err == nil {
 		// parse scheme
-		scheme := URL.Scheme
+		scheme = URL.Scheme
 		hasScheme = scheme != ""
 		// parse port
 		port, err = strconv.Atoi(URL.Port())

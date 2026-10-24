@@ -213,3 +213,17 @@ func TestDefaultOptionsContent(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateScheme(t *testing.T) {
+	deny, err := New(Options{DenySchemeList: []string{"ftp"}})
+	require.NoError(t, err)
+	require.False(t, deny.Validate("ftp://example.com"))
+	require.True(t, deny.Validate("https://example.com"))
+	require.True(t, deny.Validate("example.com"))
+
+	allow, err := New(Options{AllowSchemeList: []string{"https"}})
+	require.NoError(t, err)
+	require.True(t, allow.Validate("https://example.com"))
+	require.False(t, allow.Validate("ws://example.com"))
+	require.True(t, allow.Validate("example.com"))
+}

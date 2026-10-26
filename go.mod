@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/gaissmai/bart v0.30.0
-	github.com/projectdiscovery/utils v0.11.9
+	github.com/projectdiscovery/utils v0.11.10
 	github.com/stretchr/testify v1.12.1
 	github.com/yl2chen/cidranger v1.0.2
 )
@@ -17,5 +17,5 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 )

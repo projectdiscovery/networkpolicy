@@ -25,13 +25,3 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-
-  # Maintain dependencies for docker
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    target-branch: "main"
-    commit-message:
-      prefix: "chore"
-      include: "scope"

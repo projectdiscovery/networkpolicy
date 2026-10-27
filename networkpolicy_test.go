@@ -226,4 +226,18 @@ func TestValidateScheme(t *testing.T) {
 	require.True(t, allow.Validate("https://example.com"))
 	require.False(t, allow.Validate("ws://example.com"))
 	require.True(t, allow.Validate("example.com"))
+	require.True(t, allow.Validate("example.com:443"))
+
+	// schemes urlutil.Parse rejects
+	for _, u := range []string{"gopher://example.com:70/_x", "dict://example.com:11211/", "file:///etc/passwd", "GOPHER://example.com"} {
+		require.False(t, allow.Validate(u), u)
+	}
+
+	denyGopher, err := New(Options{DenySchemeList: []string{"gopher"}})
+	require.NoError(t, err)
+	require.False(t, denyGopher.Validate("gopher://example.com:70/_x"))
+
+	ports, err := New(Options{DenyPortList: []int{6379}})
+	require.NoError(t, err)
+	require.False(t, ports.Validate("gopher://example.com:6379/_x"))
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"net/url"
 	"regexp"
 	"strconv"
 
@@ -156,12 +157,20 @@ func (r NetworkPolicy) Validate(host string) bool {
 	var scheme string
 
 	// check if it's a valid URL
+	var u *url.URL
 	if URL, err := urlutil.Parse(host); err == nil {
+		u = URL.URL
+	} else if URL, err := url.Parse(host); err == nil {
+		// urlutil rejects schemes it doesn't know (gopher, dict, file...), which would otherwise skip the scheme and port lists
+		u = URL
+	}
+	if u != nil {
 		// parse scheme
-		scheme = URL.Scheme
+		scheme = u.Scheme
 		hasScheme = scheme != ""
 		// parse port
-		port, err = strconv.Atoi(URL.Port())
+		var err error
+		port, err = strconv.Atoi(u.Port())
 		if err == nil {
 			hasPort = true
 		}

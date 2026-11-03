@@ -241,3 +241,114 @@ func TestValidateScheme(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, ports.Validate("gopher://example.com:6379/_x"))
 }
+
+func TestValidateAddressForms(t *testing.T) {
+	var denyList []string
+	denyList = append(denyList, DefaultIPv4DenylistRanges...)
+	denyList = append(denyList, DefaultIPv6DenylistRanges...)
+	np, err := New(Options{DenyList: denyList})
+	require.NoError(t, err)
+
+	// IP literals that dial a denied IPv4 or IPv6 range
+	for _, ip := range []string{
+		"::ffff:127.0.0.1",
+		"::ffff:7f00:1",
+		"0:0:0:0:0:ffff:127.0.0.1",
+		"::ffff:169.254.169.254",
+		"::ffff:10.0.0.1",
+		"::",
+		"[::]",
+		"[::ffff:127.0.0.1]",
+		"::127.0.0.1",
+		"fe80::1%lo0",
+		"::1%1",
+	} {
+		require.False(t, np.Validate(ip), "Validate should deny %s", ip)
+		require.False(t, np.ValidateAddress(ip), "ValidateAddress should deny %s", ip)
+		_, ok := np.ValidateHost(ip)
+		require.False(t, ok, "ValidateHost should deny %s", ip)
+		require.False(t, np.ValidateURLWithIP("example.com", ip), "ValidateURLWithIP should deny %s", ip)
+	}
+
+	// names, URLs and host:port values that dial a denied range
+	for _, host := range []string{
+		"127.1",
+		"2130706433",
+		"0x7f.0.0.1",
+		"0177.0.0.1",
+		"0x7f000001",
+		"0xa9.0xfe.0xa9.0xfe",
+		"localhost",
+		"LOCALHOST.",
+		"foo.localhost",
+		"http://127.0.0.1/",
+		"http://[::ffff:127.0.0.1]:18081/x",
+		"http://[::]:18082/",
+		"http://2130706433/",
+		"http://localhost:8080/",
+		"127.0.0.1:80",
+		"[::1]:80",
+		"[::ffff:169.254.169.254]:80",
+	} {
+		require.False(t, np.Validate(host), "Validate should deny %s", host)
+	}
+
+	// public destinations stay allowed
+	for _, host := range []string{
+		"8.8.8.8",
+		"::ffff:8.8.8.8",
+		"2404:6800:4002:81c::200e",
+		"http://8.8.8.8/",
+		"http://[::ffff:8.8.8.8]:80/",
+		"8.8.8.8:53",
+		"134744072",
+		"example.com",
+		"http://example.com:8080/",
+		"1.2.3.4.example.com",
+		"localhost.example.com",
+	} {
+		require.True(t, np.Validate(host), "Validate should allow %s", host)
+	}
+	require.True(t, np.ValidateAddress("::ffff:8.8.8.8"))
+}
+
+func TestValidateExcludedIPv4Forms(t *testing.T) {
+	// same as an exclude list with one IPv4 address
+	np, err := New(Options{DenyList: []string{"127.0.0.1"}})
+	require.NoError(t, err)
+
+	for _, host := range []string{"::ffff:127.0.0.1", "[::ffff:7f00:1]", "0.0.0.0", "::", "http://[::ffff:127.0.0.1]:18081/via-redirect", "127.1"} {
+		require.False(t, np.Validate(host), "Validate should deny %s", host)
+	}
+	require.False(t, np.ValidateAddress("::ffff:127.0.0.1"))
+	require.False(t, np.ValidateAddress("::"))
+	require.True(t, np.Validate("::ffff:127.0.0.2"))
+	require.True(t, np.Validate("8.8.8.8"))
+}
+
+func TestValidateAllowListMappedForms(t *testing.T) {
+	np, err := New(Options{AllowList: []string{"10.0.0.0/8"}})
+	require.NoError(t, err)
+
+	require.True(t, np.Validate("::ffff:10.0.0.1"))
+	require.True(t, np.ValidateAddress("[::ffff:10.0.0.1]"))
+	require.False(t, np.Validate("::ffff:8.8.8.8"))
+	require.False(t, np.ValidateAddress("8.8.8.8"))
+}
+
+func TestValidateHostnameDenyRule(t *testing.T) {
+	np, err := New(Options{DenyList: DefaultHostDenylist})
+	require.NoError(t, err)
+
+	require.False(t, np.Validate("localhost"))
+	require.True(t, np.Validate("example.com"))
+}
+
+func TestValidateHostBracketedIP(t *testing.T) {
+	np, err := New(Options{DenyList: []string{"10.0.0.0/8"}})
+	require.NoError(t, err)
+
+	ip, ok := np.ValidateHost("[::1]")
+	require.True(t, ok)
+	require.Equal(t, "::1", ip)
+}

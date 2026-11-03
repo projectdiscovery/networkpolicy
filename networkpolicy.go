@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gaissmai/bart"
 	iputil "github.com/projectdiscovery/utils/ip"
@@ -133,21 +134,13 @@ func (r NetworkPolicy) Validate(host string) bool {
 	}
 
 	// check if it's an ip
-	if iputil.IsIP(host) {
-		parsed, err := netip.ParseAddr(host)
-		if err != nil {
-			return false
-		}
+	if addr, ok := parseAddr(host); ok {
+		return r.validateAddr(addr)
+	}
 
-		if r.DenyRanger != nil && r.DenyRanger.Size() > 0 && rangerContains(r.DenyRanger, parsed) {
-			return false
-		}
-
-		if r.AllowRanger != nil && r.AllowRanger.Size() > 0 {
-			return rangerContains(r.AllowRanger, parsed)
-		}
-
-		return true
+	// names that resolvers and browsers read as an address (127.1, 2130706433, localhost) must not reach a denied range
+	if r.hostAddrsDenied(host) {
+		return false
 	}
 
 	// try to obtain scheme and port
@@ -163,6 +156,13 @@ func (r NetworkPolicy) Validate(host string) bool {
 	} else if URL, err := url.Parse(host); err == nil {
 		// urlutil rejects schemes it doesn't know (gopher, dict, file...), which would otherwise skip the scheme and port lists
 		u = URL
+	}
+	// the host of a URL or host:port value; urlutil keeps some hosts (http://2130706433/) in the path
+	if u != nil && r.hostAddrsDenied(u.Hostname()) {
+		return false
+	}
+	if URL, err := url.Parse(host); err == nil && r.hostAddrsDenied(URL.Hostname()) {
+		return false
 	}
 	if u != nil {
 		// parse scheme
@@ -230,19 +230,61 @@ func (r NetworkPolicy) ValidateURLWithIP(host string, ip string) bool {
 }
 
 func (r NetworkPolicy) ValidateAddress(IP string) bool {
-	IPDest, err := netip.ParseAddr(IP)
-	if err != nil {
+	IPDest, ok := parseAddr(IP)
+	if !ok {
 		return false
 	}
-	if r.DenyRanger != nil && r.DenyRanger.Size() > 0 && rangerContains(r.DenyRanger, IPDest) {
+	return r.validateAddr(IPDest)
+}
+
+// validateAddr checks an address in its canonical form: zone removed and IPv4-mapped IPv6 (::ffff:a.b.c.d) unmapped,
+// so IPv4 ranges also match the IPv6 forms that dial the same IPv4 host
+func (r NetworkPolicy) validateAddr(addr netip.Addr) bool {
+	if r.addrDenied(addr) {
 		return false
 	}
 
 	if r.AllowRanger != nil && r.AllowRanger.Size() > 0 {
-		return rangerContains(r.AllowRanger, IPDest)
+		addr = addr.WithZone("")
+		return rangerContains(r.AllowRanger, addr.Unmap()) || rangerContains(r.AllowRanger, addr)
 	}
 
 	return true
+}
+
+// addrDenied checks the address as given and in its canonical form.
+// The unspecified address (0.0.0.0, ::) dials the local host, so it is also checked as loopback.
+func (r NetworkPolicy) addrDenied(addr netip.Addr) bool {
+	if r.DenyRanger == nil || r.DenyRanger.Size() == 0 {
+		return false
+	}
+	addr = addr.WithZone("")
+	canonical := addr.Unmap()
+	if rangerContains(r.DenyRanger, addr) || rangerContains(r.DenyRanger, canonical) {
+		return true
+	}
+	if canonical.IsUnspecified() {
+		for _, loopback := range loopbackAddrs {
+			if rangerContains(r.DenyRanger, loopback) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// hostAddrsDenied reports whether host is an address form (IP literal, legacy IPv4 notation, localhost name)
+// that dials an address in the deny list
+func (r NetworkPolicy) hostAddrsDenied(host string) bool {
+	if addr, ok := parseAddr(host); ok {
+		return r.addrDenied(addr)
+	}
+	for _, addr := range hostAddrs(host) {
+		if r.addrDenied(addr) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r NetworkPolicy) ValidateAddressWithPort(IP string, port int) bool {
@@ -291,8 +333,14 @@ func portIsListed(list map[int]struct{}, port int) bool {
 
 // ValidateHost checks all the ips associated to a hostname and returns the valid ip if any
 func (r NetworkPolicy) ValidateHost(host string) (string, bool) {
-	if iputil.IsIP(host) {
+	if addr, ok := parseAddr(host); ok {
+		if strings.HasPrefix(host, "[") {
+			host = addr.String()
+		}
 		return host, r.Validate(host)
+	}
+	if r.hostAddrsDenied(host) {
+		return "", false
 	}
 	// obtain ips from system resolvers
 	addrs, err := net.LookupHost(host)

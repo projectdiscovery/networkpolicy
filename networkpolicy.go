@@ -15,10 +15,10 @@ import (
 )
 
 func init() {
+	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv4Denylist...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv4DenylistRanges...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
 	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6DenylistRanges...)
-	DefaultOptions.DenyList = append(DefaultOptions.DenyList, DefaultIPv6Denylist...)
 	DefaultOptions.AllowSchemeList = append(DefaultOptions.AllowSchemeList, DefaultSchemeAllowList...)
 }
 

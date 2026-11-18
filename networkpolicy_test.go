@@ -352,3 +352,18 @@ func TestValidateHostBracketedIP(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "::1", ip)
 }
+
+func TestDefaultOptionsDenyListWiring(t *testing.T) {
+	// DefaultOptions is the policy consumers get when they pass it straight to
+	// New, so every default deny entry has to be in it exactly once.
+	var expected []string
+	expected = append(expected, DefaultIPv4Denylist...)
+	expected = append(expected, DefaultIPv4DenylistRanges...)
+	expected = append(expected, DefaultIPv6Denylist...)
+	expected = append(expected, DefaultIPv6DenylistRanges...)
+
+	for _, entry := range expected {
+		require.Contains(t, DefaultOptions.DenyList, entry, "DefaultOptions.DenyList is missing %s", entry)
+	}
+	require.Len(t, DefaultOptions.DenyList, len(expected), "DefaultOptions.DenyList should hold each default entry once")
+}
